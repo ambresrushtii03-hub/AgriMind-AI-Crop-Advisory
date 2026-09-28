@@ -1,22 +1,24 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AgriMind AI crop advisory API
 servers:
   - url: /api
-    description: Base API path
+    description: Shared API service
 tags:
   - name: health
-    description: Health operations
+  - name: dashboard
+  - name: farms
+  - name: advisories
+  - name: weather
+  - name: chat
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +26,475 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /farms:
+    get:
+      operationId: listFarms
+      tags: [farms]
+      summary: List farms
+      responses:
+        "200":
+          description: Farm list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Farm"
+    post:
+      operationId: createFarm
+      tags: [farms]
+      summary: Create a farm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FarmInput"
+      responses:
+        "201":
+          description: Created farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+  /farms/{farmId}:
+    get:
+      operationId: getFarm
+      tags: [farms]
+      summary: Get a farm
+      parameters:
+        - $ref: "#/components/parameters/FarmId"
+      responses:
+        "200":
+          description: Farm detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateFarm
+      tags: [farms]
+      summary: Update a farm
+      parameters:
+        - $ref: "#/components/parameters/FarmId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FarmUpdate"
+      responses:
+        "200":
+          description: Updated farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+    delete:
+      operationId: deleteFarm
+      tags: [farms]
+      summary: Delete a farm
+      parameters:
+        - $ref: "#/components/parameters/FarmId"
+      responses:
+        "204":
+          description: Deleted
+  /farms/{farmId}/zones:
+    post:
+      operationId: createZone
+      tags: [farms]
+      summary: Add a field zone
+      parameters:
+        - $ref: "#/components/parameters/FarmId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ZoneInput"
+      responses:
+        "201":
+          description: Created zone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Zone"
+  /advisories:
+    get:
+      operationId: listAdvisories
+      tags: [advisories]
+      summary: List advisories
+      parameters:
+        - name: urgency
+          in: query
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        - name: crop
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Advisory list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Advisory"
+    post:
+      operationId: generateAdvisory
+      tags: [advisories]
+      summary: Generate a crop advisory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdvisoryInput"
+      responses:
+        "201":
+          description: Generated advisory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Advisory"
+  /advisories/{advisoryId}:
+    get:
+      operationId: getAdvisory
+      tags: [advisories]
+      summary: Get advisory detail
+      parameters:
+        - $ref: "#/components/parameters/AdvisoryId"
+      responses:
+        "200":
+          description: Advisory detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Advisory"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /weather:
+    get:
+      operationId: getWeather
+      tags: [weather]
+      summary: Get current weather summary
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: lon
+          in: query
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Weather summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Weather"
+  /chat/sessions:
+    get:
+      operationId: listChatSessions
+      tags: [chat]
+      summary: List chat sessions
+      responses:
+        "200":
+          description: Chat sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatSession"
+    post:
+      operationId: createChatSession
+      tags: [chat]
+      summary: Create a chat session
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatSessionInput"
+      responses:
+        "201":
+          description: New chat session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatSession"
+  /chat/sessions/{sessionId}/messages:
+    get:
+      operationId: listChatMessages
+      tags: [chat]
+      summary: List session messages
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Chat messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+  /chat/messages:
+    post:
+      operationId: sendChatMessage
+      tags: [chat]
+      summary: Send a chat message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageInput"
+      responses:
+        "201":
+          description: Assistant response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
 components:
+  parameters:
+    FarmId:
+      name: farmId
+      in: path
+      required: true
+      schema: { type: string }
+    AdvisoryId:
+      name: advisoryId
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
-
+        status: { type: string }
+      required: [status]
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+    Farm:
+      type: object
+      required: [id, name, location, area, crop, cropCount, zones, healthScore, moisture, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        location: { type: string }
+        area: { type: number }
+        crop: { type: string }
+        cropCount: { type: integer }
+        zones:
+          type: array
+          items: { $ref: "#/components/schemas/Zone" }
+        healthScore: { type: number }
+        moisture: { type: number }
+        status: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+        irrigation: { type: string }
+    FarmInput:
+      type: object
+      required: [name, location, area, crop]
+      properties:
+        name: { type: string, minLength: 2 }
+        location: { type: string, minLength: 2 }
+        area: { type: number, minimum: 0.1 }
+        crop: { type: string }
+        irrigation: { type: string }
+    FarmUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        location: { type: string }
+        area: { type: number }
+        crop: { type: string }
+        irrigation: { type: string }
+    Zone:
+      type: object
+      required: [id, name, crop, stage, area, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        crop: { type: string }
+        stage: { type: string }
+        area: { type: number }
+        status: { type: string }
+    ZoneInput:
+      type: object
+      required: [name, crop, area]
+      properties:
+        name: { type: string }
+        crop: { type: string }
+        area: { type: number }
+        stage: { type: string }
+    Advisory:
+      type: object
+      required: [id, crop, farm, diagnosis, category, urgency, confidence, summary, createdAt, actionPlan, soil, forecast]
+      properties:
+        id: { type: string }
+        crop: { type: string }
+        farm: { type: string }
+        diagnosis: { type: string }
+        category: { type: string }
+        urgency: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        confidence: { type: number }
+        summary: { type: string }
+        createdAt: { type: string }
+        imageUrl: { type: ["string", "null"] }
+        actionPlan:
+          type: array
+          items: { type: string }
+        soil:
+          type: object
+          required: [ph, nitrogen, phosphorus, potassium]
+          properties:
+            ph: { type: number }
+            nitrogen: { type: number }
+            phosphorus: { type: number }
+            potassium: { type: number }
+        forecast:
+          type: object
+          required: [yieldPotential, harvestWindow, risks]
+          properties:
+            yieldPotential: { type: number }
+            harvestWindow: { type: string }
+            risks:
+              type: array
+              items: { type: string }
+    AdvisoryInput:
+      type: object
+      required: [crop, farmId, growthStage, symptoms]
+      properties:
+        crop: { type: string }
+        farmId: { type: string }
+        growthStage: { type: string }
+        symptoms:
+          type: array
+          items: { type: string }
+        ph: { type: number }
+        nitrogen: { type: number }
+        phosphorus: { type: number }
+        potassium: { type: number }
+        moisture: { type: number }
+        language: { type: string }
+    DashboardSummary:
+      type: object
+      required: [farmCount, activeAlerts, advisoryCount, soilScore, weather, activities, nutrientData, yieldData]
+      properties:
+        farmCount: { type: integer }
+        activeAlerts: { type: integer }
+        advisoryCount: { type: integer }
+        soilScore: { type: number }
+        weather: { $ref: "#/components/schemas/Weather" }
+        activities:
+          type: array
+          items: { $ref: "#/components/schemas/Activity" }
+        nutrientData:
+          type: array
+          items: { $ref: "#/components/schemas/MetricPoint" }
+        yieldData:
+          type: array
+          items: { $ref: "#/components/schemas/MetricPoint" }
+    Activity:
+      type: object
+      required: [id, title, detail, time, type]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        detail: { type: string }
+        time: { type: string }
+        type: { type: string }
+    MetricPoint:
+      type: object
+      required: [label, value, target]
+      properties:
+        label: { type: string }
+        value: { type: number }
+        target: { type: number }
+    Weather:
+      type: object
+      required: [location, temperature, condition, humidity, rainChance, forecast]
+      properties:
+        location: { type: string }
+        temperature: { type: number }
+        condition: { type: string }
+        humidity: { type: number }
+        rainChance: { type: number }
+        forecast:
+          type: array
+          items:
+            type: object
+            required: [day, icon, high, low, rain]
+            properties:
+              day: { type: string }
+              icon: { type: string }
+              high: { type: number }
+              low: { type: number }
+              rain: { type: number }
+    ChatSession:
+      type: object
+      required: [id, title, farm, updatedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        farm: { type: string }
+        updatedAt: { type: string }
+    ChatSessionInput:
+      type: object
+      properties:
+        farmId: { type: string }
+        title: { type: string }
+    ChatMessage:
+      type: object
+      required: [id, sessionId, role, content, createdAt]
+      properties:
+        id: { type: string }
+        sessionId: { type: string }
+        role: { type: string, enum: [user, assistant] }
+        content: { type: string }
+        createdAt: { type: string }
+    ChatMessageInput:
+      type: object
+      required: [sessionId, content]
+      properties:
+        sessionId: { type: string }
+        content: { type: string, minLength: 1 }

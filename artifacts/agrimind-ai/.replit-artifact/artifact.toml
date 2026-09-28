@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AgriMind AI"
+description = "An AI-powered crop advisory workspace for farmers and agronomists to manage farms, monitor soil and weather signals, run crop diagnostics, and turn field observations into actionable recommendations."
+version = "1.0.0"
+id = "artifacts/agrimind-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25558
+
+[services.development]
+run = "pnpm --filter @workspace/agrimind-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/agrimind-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/agrimind-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25558"
+BASE_PATH = "/"
